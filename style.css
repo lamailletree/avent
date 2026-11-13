@@ -65,7 +65,7 @@ h1 {
 
 .board {
   position: relative;
-  width: min(100%, 760px);
+  width: 100%;
   overflow: hidden;
   border-radius: 12px;
   background: #fff;
