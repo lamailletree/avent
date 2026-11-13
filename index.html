@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#eef1e8">
+    <title>L’aventure — les énigmes</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header class="intro">
+        <p class="eyebrow">Jeu d’aventure</p>
+        <h1>À vous de jouer&nbsp;!</h1>
+        <p class="instruction">Cliquez sur une case pour laquelle une image d’énigme est disponible.</p>
+      </header>
+
+      <section class="board-section" aria-label="Plateau de jeu">
+        <div class="board" id="board">
+          <img
+            class="board-image"
+            src="avent.png"
+            alt="Plateau de jeu illustré, composé de cases numérotées"
+            width="1024"
+            height="1024"
+          >
+        </div>
+      </section>
+
+      <p class="hint">Seules les cases ayant une image dans le dossier <code>enigme</code> sont cliquables.</p>
+    </main>
+
+    <div class="modal" id="modal" hidden>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <button class="close-button" id="close-button" type="button" aria-label="Fermer l’énigme">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h2 class="modal-title" id="modal-title"></h2>
+        <div class="image-frame">
+          <img class="enigma-image" id="enigma-image" alt="">
+          <p class="modal-message" id="modal-message" role="status" hidden></p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
