@@ -25,7 +25,7 @@ body.modal-open {
 }
 
 main {
-  width: min(100% - 32px, 840px);
+  width: min(100% - 24px, 1100px);
   margin: 0 auto;
   padding: 44px 0 32px;
 }
@@ -66,6 +66,7 @@ h1 {
 .board {
   position: relative;
   width: 100%;
+  aspect-ratio: 514 / 922;
   overflow: hidden;
   border-radius: 12px;
   background: #fff;
@@ -75,7 +76,8 @@ h1 {
 .board-image {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
 }
 
 .case-button {
@@ -205,7 +207,7 @@ code {
 
 @media (max-width: 560px) {
   main {
-    width: min(100% - 20px, 840px);
+    width: calc(100% - 12px);
     padding-top: 28px;
   }
 

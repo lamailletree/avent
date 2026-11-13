@@ -37,6 +37,9 @@ const modalMessage = document.querySelector("#modal-message");
 const closeButton = document.querySelector("#close-button");
 let lastFocusedElement = null;
 const imageByNumber = new Map();
+const boardBounds = board.getBoundingClientRect();
+const visibleImageWidth = 1024 * (boardBounds.width / boardBounds.height);
+const imageCropX = (1024 - visibleImageWidth) / 2;
 
 for (const item of cases) {
   findEnigmaImage(item.number).then((extension) => {
@@ -47,9 +50,9 @@ for (const item of cases) {
     button.type = "button";
     button.setAttribute("aria-label", `Ouvrir l’énigme ${item.number}`);
     button.title = `Ouvrir l’énigme ${item.number}`;
-    button.style.left = `${(item.x / 1024) * 100}%`;
+    button.style.left = `${((item.x - imageCropX) / visibleImageWidth) * 100}%`;
     button.style.top = `${(item.y / 1024) * 100}%`;
-    button.style.width = `${(item.width / 1024) * 100}%`;
+    button.style.width = `${(item.width / visibleImageWidth) * 100}%`;
     button.style.height = `${(item.height / 1024) * 100}%`;
     button.addEventListener("click", () => openEnigma(item.number, extension, button));
     board.append(button);
