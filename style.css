@@ -106,19 +106,12 @@ h1 {
 }
 
 .day-number {
-  display: grid;
-  width: 70%;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 2px solid #294438;
-  border-radius: 50%;
-  background: #faf4df;
-  box-shadow: 0 2px 6px rgb(35 51 45 / 35%);
-  color: #294438;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.05rem, 3.5vw, 2.4rem);
+  color: #fff8c1;
+  font-family: "Trebuchet MS", "Comic Sans MS", sans-serif;
+  font-size: clamp(1.5rem, 5vw, 3.4rem);
   font-weight: 700;
   line-height: 1;
+  text-shadow: 2px 2px 0 #294438, -1px -1px 0 #294438, 1px -1px 0 #294438, -1px 1px 0 #294438, 1px 1px 0 #294438;
   pointer-events: none;
 }
 
