@@ -662,6 +662,84 @@ code {
   place-items: center;
 }
 
+.image-frame[hidden] {
+  display: none;
+}
+
+.generated-enigma {
+  color: #53645a;
+  line-height: 1.6;
+}
+
+.generated-enigma[hidden],
+.generated-enigma-result[hidden] {
+  display: none;
+}
+
+.location-notice {
+  padding: 12px 14px;
+  border-left: 3px solid #7d9a7f;
+  border-radius: 0 8px 8px 0;
+  background: #edf2e8;
+  font-size: 0.9rem;
+}
+
+.generated-enigma-actions {
+  margin: 18px 0 12px;
+}
+
+.ai-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 0 12px;
+  font-size: 0.88rem;
+}
+
+.ai-consent input {
+  flex: 0 0 auto;
+  margin-top: 5px;
+  accent-color: #456b55;
+}
+
+.generated-enigma-status {
+  margin: 18px 0 0;
+  color: #53645a;
+}
+
+.generated-enigma-status[data-error="true"] {
+  color: #8b3b32;
+}
+
+.generated-enigma-result {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid #d5dfd1;
+  border-radius: 12px;
+  background: #f3f5ed;
+}
+
+.generated-enigma-text {
+  margin: 0;
+  color: #294438;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.18rem;
+  line-height: 1.7;
+}
+
+.generated-enigma-place {
+  margin: 14px 0 8px;
+  font-size: 0.9rem;
+}
+
+.generated-place-link,
+.osm-attribution {
+  display: inline-block;
+  margin: 5px 12px 0 0;
+  color: #315744;
+  font-size: 0.8rem;
+}
+
 .enigma-image {
   display: block;
   max-width: 100%;

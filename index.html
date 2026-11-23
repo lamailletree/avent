@@ -52,6 +52,25 @@
           <img class="enigma-image" id="enigma-image" alt="">
           <p class="modal-message" id="modal-message" role="status" hidden></p>
         </div>
+        <section class="generated-enigma" id="generated-enigma" aria-label="Créer une énigme de plein air" hidden>
+          <p>Cette énigme n’existe pas encore. La première personne à la créer la partagera avec tous les visiteurs de cette date.</p>
+          <p class="location-notice">Si l’énigme n’existe pas encore, ta position est transmise au serveur du site pour demander à OpenStreetMap un lieu de plein air à moins d’un kilomètre. Les coordonnées ne sont pas conservées dans l’énigme, mais son texte et le nom du lieu seront partagés pour cette date. La position n’est pas demandée si l’énigme existe déjà.</p>
+          <div class="generated-enigma-actions">
+            <button class="admin-button" id="generate-osm-enigma" type="button">Créer une énigme nature</button>
+          </div>
+          <label class="ai-consent">
+            <input id="gemini-consent" type="checkbox">
+            J’accepte d’envoyer à Gemini le nom et le type du lieu trouvé. L’offre gratuite peut utiliser ces données pour améliorer les produits Google.
+          </label>
+          <button class="admin-button secondary" id="generate-gemini-enigma" type="button" disabled>Créer avec Gemini</button>
+          <p class="generated-enigma-status" id="generated-enigma-status" role="status" hidden></p>
+          <div class="generated-enigma-result" id="generated-enigma-result" hidden>
+            <p class="generated-enigma-text" id="generated-enigma-text"></p>
+            <p class="generated-enigma-place" id="generated-enigma-place"></p>
+            <a class="generated-place-link" id="generated-place-link" target="_blank" rel="noreferrer" hidden>Voir le lieu sur OpenStreetMap</a>
+            <a class="osm-attribution" id="osm-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© contributeurs OpenStreetMap</a>
+          </div>
+        </section>
       </div>
     </div>
   </body>

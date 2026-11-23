@@ -27,6 +27,7 @@ public puisse afficher les images. Les téléversements restent réservés au
 compte `lamaille35@gmail.com`. Les images de fond acceptées sont PNG, JPEG ou
 WebP ; les images de case sont PNG et les énigmes PNG ou JPEG. La taille
 maximale est de 10 Mo par fichier.
+
 Le stockage utilise l’espace Drive du compte (15 Go gratuits pour un compte
 Google personnel, partagés avec Gmail et Photos).
 
@@ -57,6 +58,43 @@ L’administration est accessible depuis le menu supérieur, sur `admin.html`.
 Après connexion, elle permet de parcourir les dossiers et fichiers du dossier
 Drive configuré, ainsi que d’ajouter ou de supprimer les fonds, les cases et
 les énigmes.
+
+### Énigmes générées et partagées
+
+Quand une énigme manque pour aujourd’hui ou une date passée, le premier
+visiteur peut choisir une énigme modèle ou Gemini. Le navigateur demande alors
+la permission de localisation et doit fournir une précision GPS de 250 m ou
+moins. Le serveur cherche un lieu de plein air cartographié dans OpenStreetMap
+à une distance maximale d’un kilomètre, en tenant compte de cette précision.
+L’énigme est ensuite enregistrée par date dans Upstash Redis : le même texte et
+le même lieu s’affichent à tous les visiteurs, même s’ils vivent ailleurs.
+La position GPS n’est pas enregistrée dans le puzzle. S’il n’y a pas de lieu
+approprié, la génération échoue plutôt que de proposer un lieu urbain.
+
+Pour activer ce comportement sur Vercel :
+
+1. Crée une base Redis Upstash et renseigne `UPSTASH_REDIS_REST_URL` et
+   `UPSTASH_REDIS_REST_TOKEN` dans les variables d’environnement Vercel.
+2. Pour le choix Gemini, crée une clé Google AI Studio et ajoute
+   `GEMINI_API_KEY` à Vercel. La clé reste côté serveur. Choisis également un
+   identifiant de modèle accessible dans ton compte et configure `GEMINI_MODEL`.
+3. Redéploie le site. Les tests locaux nécessitent `vercel dev` pour exécuter
+   `/api/enigma`.
+
+Upstash propose une offre gratuite avec des quotas ([tarifs](https://upstash.com/pricing/redis);
+actuellement 250 Mo de données, 10 Go de bande passante et 500 000 commandes
+par mois). Le quota gratuit de Gemini dépend du modèle et peut changer
+([tarifs](https://ai.google.dev/gemini-api/docs/pricing)) ; Google indique que
+les données de l’offre gratuite peuvent servir à améliorer ses produits. Le
+choix Gemini demande donc une confirmation avant l’envoi du nom et du type du
+lieu à Google. L’option modèle n’envoie pas ces données à Gemini. Les services
+publics OpenStreetMap sont gratuits, soumis à leurs règles d’usage et sans
+garantie de disponibilité. Les cartes et résultats OSM sont attribués aux
+[contributeurs OpenStreetMap](https://www.openstreetmap.org/copyright).
+
+Les puzzles partagés sont conservés sans date d’expiration dans Redis. Le
+premier visiteur qui crée l’énigme d’une date choisit donc le lieu et le mode
+de génération pour tous les autres visiteurs de cette date.
 
 Le dossier dédié et ses images sont publics en lecture : n’y place aucun
 document privé. Les modifications nécessitent un jeton Google associé au

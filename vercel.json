@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/enigma.js": {
+      "maxDuration": 30
+    }
+  }
+}

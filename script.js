@@ -13,11 +13,23 @@ const modalTitle = document.querySelector("#modal-title");
 const modalImage = document.querySelector("#enigma-image");
 const modalMessage = document.querySelector("#modal-message");
 const closeButton = document.querySelector("#close-button");
+const imageFrame = document.querySelector(".image-frame");
+const generatedEnigma = document.querySelector("#generated-enigma");
+const generateOsmButton = document.querySelector("#generate-osm-enigma");
+const generateGeminiButton = document.querySelector("#generate-gemini-enigma");
+const geminiConsent = document.querySelector("#gemini-consent");
+const generatedEnigmaStatus = document.querySelector("#generated-enigma-status");
+const generatedEnigmaResult = document.querySelector("#generated-enigma-result");
+const generatedEnigmaText = document.querySelector("#generated-enigma-text");
+const generatedEnigmaPlace = document.querySelector("#generated-enigma-place");
+const generatedPlaceLink = document.querySelector("#generated-place-link");
 const imageByNumber = new Map();
 let cloudEnigmaImages = new Map();
 let googleDriveServicePromise;
 let lastFocusedElement = null;
 let calendarRenderId = 0;
+let selectedEnigmaDate = null;
+let generationInProgress = false;
 
 const today = new Date();
 let selectedMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
@@ -28,6 +40,12 @@ document.querySelector("#current-month").addEventListener("click", () => {
   renderCalendar();
 });
 renderCalendar();
+
+generateOsmButton.addEventListener("click", () => generateSharedEnigma("openstreetmap"));
+generateGeminiButton.addEventListener("click", () => generateSharedEnigma("gemini"));
+geminiConsent.addEventListener("change", () => {
+  generateGeminiButton.disabled = generationInProgress || !geminiConsent.checked;
+});
 
 async function getGoogleDriveService() {
   if (!googleDriveServicePromise) {
@@ -92,8 +110,12 @@ async function updateCloudAssets(monthKey, numberOfDays, renderId) {
   try {
     const service = await getGoogleDriveService();
     if (!service) {
+      cloudEnigmaImages = new Map();
       boardImage.src = "fond-calendrier.svg";
       boardImage.dataset.cloud = "false";
+      for (const button of calendarGrid.querySelectorAll(".case-button")) {
+        void updateEnigmaButton(button, Number(button.dataset.day));
+      }
       return;
     }
     const assets = await service.loadMonthAssets(monthKey, numberOfDays);
@@ -115,8 +137,12 @@ async function updateCloudAssets(monthKey, numberOfDays, renderId) {
     calendarStatus.hidden = true;
   } catch (error) {
     if (renderId !== calendarRenderId) return;
+    cloudEnigmaImages = new Map();
     boardImage.dataset.cloud = "false";
     boardImage.src = "fond-calendrier.svg";
+    for (const button of calendarGrid.querySelectorAll(".case-button")) {
+      void updateEnigmaButton(button, Number(button.dataset.day));
+    }
     calendarStatus.textContent = `Les images du mois n’ont pas pu être chargées : ${error.message}. Les exemples locaux sont affichés.`;
     calendarStatus.hidden = false;
   }
@@ -168,18 +194,116 @@ async function updateEnigmaButton(caseButton, number) {
   const cloudImage = cloudEnigmaImages.get(number);
   const localImage = extension ? `enigme/${number}${extension}` : null;
   const imageUrl = cloudImage ?? localImage;
-  caseButton.disabled = !imageUrl;
+  const canGenerate = isPastOrCurrentDay(number);
+  caseButton.disabled = !imageUrl && !canGenerate;
   caseButton.setAttribute(
     "aria-label",
-    imageUrl ? `Ouvrir l’énigme ${number}` : `Jour ${number}, énigme indisponible`,
+    imageUrl
+      ? `Ouvrir l’énigme ${number}`
+      : canGenerate
+        ? `Créer une énigme pour le jour ${number}`
+        : `Jour ${number}, énigme indisponible`,
   );
   caseButton.title = imageUrl
     ? `Ouvrir l’énigme ${number}`
-    : `L’énigme ${number} n’est pas encore disponible`;
+    : canGenerate
+      ? `Créer une énigme nature pour le jour ${number}`
+      : `L’énigme ${number} n’est pas encore disponible`;
 
   caseButton.onclick = imageUrl
     ? () => openEnigma(number, imageUrl, caseButton, cloudImage ? localImage : null)
-    : null;
+    : canGenerate
+      ? () => openEnigmaGenerator(number)
+      : null;
+}
+
+function isPastOrCurrentDay(number) {
+  const [year, month] = selectedMonth.split("-").map(Number);
+  const selectedDate = new Date(year, month - 1, number);
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+  return selectedDate <= currentDate;
+}
+
+function openEnigmaGenerator(number) {
+  lastFocusedElement = calendarGrid.querySelector(`[data-day="${number}"]`);
+  const [year, month] = selectedMonth.split("-").map(Number);
+  selectedEnigmaDate = `${year}-${String(month).padStart(2, "0")}-${String(number).padStart(2, "0")}`;
+  modalTitle.textContent = `Énigme ${number}`;
+  imageFrame.hidden = true;
+  modalImage.hidden = true;
+  modalMessage.hidden = true;
+  generatedEnigma.hidden = false;
+  generatedEnigmaResult.hidden = true;
+  generatedEnigmaStatus.hidden = true;
+  generatedEnigmaStatus.textContent = "";
+  generateOsmButton.disabled = false;
+  generateGeminiButton.disabled = !geminiConsent.checked;
+  modal.hidden = false;
+  document.body.classList.add("modal-open");
+  closeButton.focus();
+}
+
+async function generateSharedEnigma(mode) {
+  generationInProgress = true;
+  const buttons = [generateOsmButton, generateGeminiButton];
+  for (const button of buttons) button.disabled = true;
+  generatedEnigmaResult.hidden = true;
+  generatedEnigmaStatus.textContent = "Recherche d’un lieu naturel à proximité…";
+  generatedEnigmaStatus.hidden = false;
+  delete generatedEnigmaStatus.dataset.error;
+
+  try {
+    const requestSharedEnigma = (location = {}) => fetch("/api/enigma", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...location, mode, calendarDate: selectedEnigmaDate }),
+    });
+    let response = await requestSharedEnigma();
+    let result = await response.json();
+
+    if (response.status === 428 && result.needsLocation) {
+      if (!navigator.geolocation) {
+        throw new Error("La géolocalisation n’est pas disponible dans ce navigateur.");
+      }
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          maximumAge: 60000,
+          timeout: 15000,
+        });
+      });
+      const { latitude, longitude, accuracy } = position.coords;
+      if (accuracy > 250) {
+        throw new Error("La position est trop imprécise. Autorise la localisation précise et réessaie à l’extérieur.");
+      }
+      generatedEnigmaStatus.textContent = "Recherche d’un lieu naturel puis création de l’énigme…";
+      response = await requestSharedEnigma({ latitude, longitude, accuracy });
+      result = await response.json();
+    }
+
+    if (!response.ok) throw new Error(result.error ?? `La requête a échoué (${response.status}).`);
+
+    generatedEnigmaText.textContent = result.text;
+    generatedEnigmaPlace.textContent = result.alreadyShared
+      ? "Cette énigme est déjà partagée pour cette date."
+      : "Cette énigme est maintenant partagée pour cette date.";
+    generatedPlaceLink.href = `https://www.openstreetmap.org/${encodeURIComponent(result.osmId)}`;
+    generatedPlaceLink.hidden = false;
+    generatedEnigmaResult.hidden = false;
+    generatedEnigmaStatus.textContent = "";
+    generatedEnigmaStatus.hidden = true;
+    generationInProgress = false;
+  } catch (error) {
+    generationInProgress = false;
+    generatedEnigmaStatus.textContent = error.code === 1
+      ? "La localisation a été refusée. Autorise-la pour chercher un lieu à proximité."
+      : error.message;
+    generatedEnigmaStatus.dataset.error = "true";
+    for (const button of buttons) {
+      button.disabled = button === generateGeminiButton && !geminiConsent.checked;
+    }
+  }
 }
 
 function findEnigmaImage(number) {
@@ -210,6 +334,9 @@ function findEnigmaImage(number) {
 function openEnigma(number, imageUrl, trigger, fallbackUrl = null) {
   lastFocusedElement = trigger;
   modalTitle.textContent = `Énigme ${number}`;
+  imageFrame.hidden = false;
+  generatedEnigma.hidden = true;
+  modalImage.hidden = false;
   modalMessage.hidden = true;
   modalImage.hidden = false;
   modalImage.alt = `Image de l’énigme ${number}`;
