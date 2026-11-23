@@ -311,6 +311,8 @@ boardImage.addEventListener("error", () => {
   if (boardImage.dataset.cloud === "true") {
     boardImage.dataset.cloud = "false";
     boardImage.src = "fond-calendrier.svg";
+    calendarStatus.textContent = "Le fond de ce mois est référencé dans Drive, mais le navigateur n’a pas pu afficher son image.";
+    calendarStatus.hidden = false;
   }
 });
 
