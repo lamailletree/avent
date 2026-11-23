@@ -14,6 +14,7 @@ const modalImage = document.querySelector("#enigma-image");
 const modalMessage = document.querySelector("#modal-message");
 const closeButton = document.querySelector("#close-button");
 const imageByNumber = new Map();
+let cloudEnigmaImages = new Map();
 let googleDriveServicePromise;
 let lastFocusedElement = null;
 let calendarRenderId = 0;
@@ -98,6 +99,7 @@ async function updateCloudAssets(monthKey, numberOfDays, renderId) {
     const assets = await service.loadMonthAssets(monthKey, numberOfDays);
     if (renderId !== calendarRenderId) return;
 
+    cloudEnigmaImages = assets.enigmas;
     boardImage.dataset.cloud = String(Boolean(assets.background));
     boardImage.src = assets.background ?? "fond-calendrier.svg";
     for (const button of calendarGrid.querySelectorAll(".case-button")) {
@@ -108,6 +110,7 @@ async function updateCloudAssets(monthKey, numberOfDays, renderId) {
         image.dataset.cloud = "true";
         image.src = imageUrl;
       }
+      void updateEnigmaButton(button, day);
     }
     calendarStatus.hidden = true;
   } catch (error) {
@@ -156,19 +159,27 @@ async function addCase(number) {
   caseButton.append(caseImage, dayNumber);
   calendarGrid.append(caseButton);
 
+  void updateEnigmaButton(caseButton, number);
+}
+
+async function updateEnigmaButton(caseButton, number) {
   const extension = await findEnigmaImage(number);
-  caseButton.disabled = !extension;
+  if (!caseButton.isConnected) return;
+  const cloudImage = cloudEnigmaImages.get(number);
+  const localImage = extension ? `enigme/${number}${extension}` : null;
+  const imageUrl = cloudImage ?? localImage;
+  caseButton.disabled = !imageUrl;
   caseButton.setAttribute(
     "aria-label",
-    extension ? `Ouvrir l’énigme ${number}` : `Jour ${number}, énigme indisponible`,
+    imageUrl ? `Ouvrir l’énigme ${number}` : `Jour ${number}, énigme indisponible`,
   );
-  caseButton.title = extension
+  caseButton.title = imageUrl
     ? `Ouvrir l’énigme ${number}`
     : `L’énigme ${number} n’est pas encore disponible`;
 
-  if (extension) {
-    caseButton.addEventListener("click", () => openEnigma(number, extension, caseButton));
-  }
+  caseButton.onclick = imageUrl
+    ? () => openEnigma(number, imageUrl, caseButton, cloudImage ? localImage : null)
+    : null;
 }
 
 function findEnigmaImage(number) {
@@ -196,15 +207,21 @@ function findEnigmaImage(number) {
   return imageByNumber.get(number);
 }
 
-function openEnigma(number, extension, trigger) {
+function openEnigma(number, imageUrl, trigger, fallbackUrl = null) {
   lastFocusedElement = trigger;
   modalTitle.textContent = `Énigme ${number}`;
   modalMessage.hidden = true;
   modalImage.hidden = false;
   modalImage.alt = `Image de l’énigme ${number}`;
+  let triedFallback = false;
   modalImage.onerror = () => {
+    if (fallbackUrl && !triedFallback) {
+      triedFallback = true;
+      modalImage.src = fallbackUrl;
+      return;
+    }
     modalImage.hidden = true;
-    modalMessage.textContent = `L’image enigme/${number}${extension} ne peut pas être chargée. La case a été désactivée.`;
+    modalMessage.textContent = `L’image de l’énigme ${number} ne peut pas être chargée. La case a été désactivée.`;
     modalMessage.hidden = false;
     trigger.disabled = true;
     trigger.setAttribute("aria-label", `Jour ${number}, énigme indisponible`);
@@ -216,7 +233,7 @@ function openEnigma(number, extension, trigger) {
   modal.hidden = false;
   document.body.classList.add("modal-open");
   closeButton.focus();
-  modalImage.src = `enigme/${number}${extension}`;
+  modalImage.src = imageUrl;
 }
 
 function closeModal() {

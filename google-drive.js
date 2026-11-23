@@ -179,6 +179,25 @@ async function updateManifest(monthKey, update) {
   await writeManifest(manifest);
 }
 
+async function updateEnigmaManifest(day, update) {
+  const manifest = await readManifest();
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+    throw new Error("Le fichier d’index Drive n’a pas un format JSON valide.");
+  }
+  const previousEnigmas = manifest.enigmas ?? {};
+  if (typeof previousEnigmas !== "object" || Array.isArray(previousEnigmas)) {
+    throw new Error("La liste des énigmes dans l’index Drive n’a pas un format valide.");
+  }
+  const enigmas = { ...previousEnigmas };
+  update(enigmas);
+  if (Object.keys(enigmas).length === 0) {
+    delete manifest.enigmas;
+  } else {
+    manifest.enigmas = enigmas;
+  }
+  await writeManifest(manifest);
+}
+
 function publicImageUrl(fileId, revision) {
   const url = new URL(`${driveApi}/files/${encodeURIComponent(fileId)}`);
   url.searchParams.set("alt", "media");
@@ -276,7 +295,7 @@ export async function createPublicFolder() {
 
 export async function loadMonthAssets(monthKey, numberOfDays) {
   validateMonth(monthKey);
-  if (!hasDriveFolder()) return { background: null, cases: new Map() };
+  if (!hasDriveFolder()) return { background: null, cases: new Map(), enigmas: new Map() };
 
   const manifest = await readManifest(true);
   if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
@@ -292,9 +311,22 @@ export async function loadMonthAssets(monthKey, numberOfDays) {
     }
   }
 
+  const enigmas = new Map();
+  const manifestEnigmas = manifest.enigmas ?? {};
+  if (typeof manifestEnigmas !== "object" || Array.isArray(manifestEnigmas)) {
+    throw new Error("La liste des énigmes dans l’index Drive n’a pas un format valide.");
+  }
+  for (const [dayString, fileId] of Object.entries(manifestEnigmas)) {
+    const day = Number(dayString);
+    if (Number.isInteger(day) && day >= 1 && day <= 31 && typeof fileId === "string") {
+      enigmas.set(day, publicImageUrl(fileId, revision));
+    }
+  }
+
   return {
     background: month.background ? publicImageUrl(month.background, revision) : null,
     cases,
+    enigmas,
   };
 }
 
@@ -376,4 +408,53 @@ export async function deleteCase(monthKey, day) {
     delete month.cases[String(day)];
   });
   await deleteFileById(file.id);
+}
+
+export async function uploadEnigma(day, file) {
+  if (!Number.isInteger(day) || day < 1 || day > 31) {
+    throw new Error("Le numéro de l’énigme doit être compris entre 1 et 31.");
+  }
+  if (!file || !["image/png", "image/jpeg"].includes(file.type)) {
+    throw new Error("Choisis une image PNG ou JPEG pour l’énigme.");
+  }
+
+  const dayKey = String(day);
+  const manifest = await readManifest();
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+    throw new Error("Le fichier d’index Drive n’a pas un format JSON valide.");
+  }
+  const previousEnigmas = manifest.enigmas ?? {};
+  if (typeof previousEnigmas !== "object" || Array.isArray(previousEnigmas)) {
+    throw new Error("La liste des énigmes dans l’index Drive n’a pas un format valide.");
+  }
+
+  const extension = file.type === "image/png" ? "png" : "jpg";
+  const name = `enigme-${day}.${extension}`;
+  const fileId = await uploadImage(name, file);
+  const previousFileId = previousEnigmas[dayKey];
+  await updateEnigmaManifest(dayKey, (enigmas) => {
+    enigmas[dayKey] = fileId;
+  });
+  if (typeof previousFileId === "string" && previousFileId !== fileId) {
+    await deleteFileById(previousFileId);
+  }
+}
+
+export async function deleteEnigma(day) {
+  if (!Number.isInteger(day) || day < 1 || day > 31) {
+    throw new Error("Le numéro de l’énigme doit être compris entre 1 et 31.");
+  }
+  const dayKey = String(day);
+  const manifest = await readManifest();
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+    throw new Error("Le fichier d’index Drive n’a pas un format JSON valide.");
+  }
+  const fileId = manifest.enigmas?.[dayKey];
+  if (typeof fileId !== "string") {
+    throw new Error(`L’image de l’énigme ${day} n’existe pas dans Drive.`);
+  }
+  await updateEnigmaManifest(dayKey, (enigmas) => {
+    delete enigmas[dayKey];
+  });
+  await deleteFileById(fileId);
 }

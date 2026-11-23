@@ -84,6 +84,18 @@
                     <button class="admin-button secondary" id="delete-case" type="button">Supprimer cette image</button>
                   </div>
                 </form>
+
+                <form class="admin-upload" id="enigma-upload-form">
+                  <label for="enigma-number">Image de l’énigme (PNG ou JPEG)</label>
+                  <div class="case-upload-fields">
+                    <input id="enigma-number" type="number" min="1" max="31" value="1" required aria-label="Numéro de l’énigme">
+                    <input id="enigma-file" type="file" accept="image/png,image/jpeg" required>
+                  </div>
+                  <div class="admin-actions">
+                    <button class="admin-button" type="submit">Enregistrer l’énigme</button>
+                    <button class="admin-button secondary" id="delete-enigma" type="button">Supprimer cette énigme</button>
+                  </div>
+                </form>
               </div>
             </section>
 

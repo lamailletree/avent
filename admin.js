@@ -146,6 +146,33 @@ document.querySelector("#delete-case").addEventListener("click", async (event) =
   });
 });
 
+document.querySelector("#enigma-upload-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const fileInput = document.querySelector("#enigma-file");
+  const file = fileInput.files[0];
+  if (!file) {
+    setAdminStatus("Choisis un fichier PNG ou JPEG pour l’énigme.", true);
+    return;
+  }
+
+  const day = Number(document.querySelector("#enigma-number").value);
+  await runAdminAction(event.submitter ?? event.currentTarget.querySelector('[type="submit"]'), async (service) => {
+    await service.uploadEnigma(day, file);
+    fileInput.value = "";
+    setAdminStatus(`L’image de l’énigme ${day} a été enregistrée.`);
+    await refreshDriveFiles();
+  });
+});
+
+document.querySelector("#delete-enigma").addEventListener("click", async (event) => {
+  const day = Number(document.querySelector("#enigma-number").value);
+  await runAdminAction(event.currentTarget, async (service) => {
+    await service.deleteEnigma(day);
+    setAdminStatus(`L’image de l’énigme ${day} a été supprimée de Drive.`);
+    await refreshDriveFiles();
+  });
+});
+
 document.querySelector("#refresh-drive-files").addEventListener("click", refreshDriveFiles);
 
 async function getGoogleDriveService() {

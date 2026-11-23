@@ -8,8 +8,10 @@ position dans la semaine sont calculés automatiquement (28 à 31 jours).
 - `fond-calendrier.svg` est le fond de secours, sans cases.
 - Les exemples de cases sont `cases/1.png` et `cases/2.png`. Les fichiers
   locaux restent affichés si aucun visuel n’a été téléversé dans Drive.
-- Les énigmes ouvertes au clic restent dans `enigme/`, nommées par numéro.
-  Les fichiers `.png` et `.jpg` sont acceptés.
+- Les fichiers locaux des énigmes restent dans `enigme/`, nommés par numéro,
+  comme solution de secours. Les formats `.png` et `.jpg` sont acceptés.
+  Les énigmes peuvent aussi être téléversées depuis l’administration ; la version
+  Drive est prioritaire sur le fichier local.
 
 ## Administration gratuite avec Google Drive
 
@@ -23,7 +25,8 @@ Les images sont nommées `AAAA-MM-fond` et `AAAA-MM-case-N.png`. Le dossier est
 partagé en lecture avec toute personne ayant le lien afin que le calendrier
 public puisse afficher les images. Les téléversements restent réservés au
 compte `lamaille35@gmail.com`. Les images de fond acceptées sont PNG, JPEG ou
-WebP ; les images de case sont PNG. La taille maximale est de 10 Mo par fichier.
+WebP ; les images de case sont PNG et les énigmes PNG ou JPEG. La taille
+maximale est de 10 Mo par fichier.
 Le stockage utilise l’espace Drive du compte (15 Go gratuits pour un compte
 Google personnel, partagés avec Gmail et Photos).
 
@@ -47,11 +50,13 @@ Google personnel, partagés avec Gmail et Photos).
 6. Sers le site via HTTP/HTTPS, ouvre **Administration** et connecte-toi avec
    `lamaille35@gmail.com`. Clique **Créer le dossier public**.
 7. Copie les deux identifiants affichés dans `google-config.js`, redéploie le
-   site, puis reconnecte-toi pour téléverser les images par mois.
+   site, puis reconnecte-toi pour téléverser les images du calendrier et les
+   énigmes numérotées.
 
 L’administration est accessible depuis le menu supérieur, sur `admin.html`.
 Après connexion, elle permet de parcourir les dossiers et fichiers du dossier
-Drive configuré, ainsi que d’ajouter ou de supprimer les images du calendrier.
+Drive configuré, ainsi que d’ajouter ou de supprimer les fonds, les cases et
+les énigmes.
 
 Le dossier dédié et ses images sont publics en lecture : n’y place aucun
 document privé. Les modifications nécessitent un jeton Google associé au
