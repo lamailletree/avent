@@ -63,13 +63,18 @@ les énigmes.
 
 Quand une énigme manque pour aujourd’hui ou une date passée, le premier
 visiteur peut choisir une énigme modèle ou Gemini. Le navigateur demande alors
-la permission de localisation et doit fournir une précision GPS de 250 m ou
-moins. Le serveur cherche un lieu de plein air cartographié dans OpenStreetMap
-à une distance maximale d’un kilomètre, en tenant compte de cette précision.
+la permission de localisation (avec une précision GPS de 250 m ou moins), ou
+permet de rechercher une adresse en France et de choisir un point sur la carte.
+La recherche d’adresse utilise la Géoplateforme de l’IGN et le fond de carte
+utilise les tuiles OpenStreetMap. Le serveur cherche ensuite un lieu de plein
+air cartographié dans OpenStreetMap à une distance maximale d’un kilomètre,
+autour de la position ou du point choisi.
 L’énigme est ensuite enregistrée par date dans Upstash Redis : le même texte et
 le même lieu s’affichent à tous les visiteurs, même s’ils vivent ailleurs.
 La position GPS n’est pas enregistrée dans le puzzle. S’il n’y a pas de lieu
-approprié, la génération échoue plutôt que de proposer un lieu urbain.
+approprié, la génération échoue plutôt que de proposer un lieu urbain. Les
+services de géocodage et de tuiles restent soumis à leurs conditions d’usage
+et à leur disponibilité.
 
 Pour activer ce comportement sur Vercel :
 

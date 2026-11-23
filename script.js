@@ -18,6 +18,12 @@ const generatedEnigma = document.querySelector("#generated-enigma");
 const generateOsmButton = document.querySelector("#generate-osm-enigma");
 const generateGeminiButton = document.querySelector("#generate-gemini-enigma");
 const geminiConsent = document.querySelector("#gemini-consent");
+const manualLocationForm = document.querySelector("#manual-location-form");
+const manualLocationQuery = document.querySelector("#manual-location-query");
+const manualLocationSearchButton = document.querySelector("#manual-location-search-button");
+const manualLocationStatus = document.querySelector("#manual-location-status");
+const manualLocationResults = document.querySelector("#manual-location-results");
+const manualLocationSelection = document.querySelector("#manual-location-selection");
 const generatedEnigmaStatus = document.querySelector("#generated-enigma-status");
 const generatedEnigmaResult = document.querySelector("#generated-enigma-result");
 const generatedEnigmaText = document.querySelector("#generated-enigma-text");
@@ -30,6 +36,9 @@ let lastFocusedElement = null;
 let calendarRenderId = 0;
 let selectedEnigmaDate = null;
 let generationInProgress = false;
+let manualLocationMap = null;
+let manualLocationMarker = null;
+let selectedManualLocation = null;
 
 const today = new Date();
 let selectedMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
@@ -43,6 +52,7 @@ renderCalendar();
 
 generateOsmButton.addEventListener("click", () => generateSharedEnigma("openstreetmap"));
 generateGeminiButton.addEventListener("click", () => generateSharedEnigma("gemini"));
+manualLocationForm.addEventListener("submit", searchManualLocation);
 geminiConsent.addEventListener("change", () => {
   generateGeminiButton.disabled = generationInProgress || !geminiConsent.checked;
 });
@@ -237,11 +247,138 @@ function openEnigmaGenerator(number) {
   generatedEnigmaResult.hidden = true;
   generatedEnigmaStatus.hidden = true;
   generatedEnigmaStatus.textContent = "";
+  manualLocationForm.reset();
+  manualLocationResults.replaceChildren();
+  manualLocationResults.hidden = true;
+  manualLocationStatus.textContent = "";
+  manualLocationStatus.hidden = true;
+  manualLocationSelection.textContent = "";
+  manualLocationSelection.hidden = true;
+  selectedManualLocation = null;
   generateOsmButton.disabled = false;
   generateGeminiButton.disabled = !geminiConsent.checked;
   modal.hidden = false;
   document.body.classList.add("modal-open");
+  initializeManualLocationMap();
   closeButton.focus();
+}
+
+function initializeManualLocationMap() {
+  if (typeof L === "undefined") {
+    manualLocationStatus.textContent = "La carte n’a pas pu être chargée. Tu peux tout de même chercher et choisir une adresse.";
+    manualLocationStatus.hidden = false;
+    return;
+  }
+
+  if (!manualLocationMap) {
+    manualLocationMap = L.map("manual-location-map", { scrollWheelZoom: false })
+      .setView([46.6, 2.4], 6);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(manualLocationMap);
+    manualLocationMap.on("click", (event) => {
+      setManualLocation(event.latlng.lat, event.latlng.lng, "Point choisi sur la carte", false);
+    });
+  } else {
+    manualLocationMap.setView([46.6, 2.4], 6);
+    if (manualLocationMarker) {
+      manualLocationMap.removeLayer(manualLocationMarker);
+      manualLocationMarker = null;
+    }
+  }
+
+  selectedManualLocation = null;
+  requestAnimationFrame(() => manualLocationMap.invalidateSize());
+}
+
+function setManualLocation(latitude, longitude, label, moveMap = true) {
+  selectedManualLocation = { latitude, longitude, accuracy: 0 };
+  if (manualLocationMap) {
+    const position = [latitude, longitude];
+    if (!manualLocationMarker) {
+      manualLocationMarker = L.marker(position, { draggable: true }).addTo(manualLocationMap);
+      manualLocationMarker.on("dragend", () => {
+        const moved = manualLocationMarker.getLatLng();
+        setManualLocation(moved.lat, moved.lng, "Point déplacé sur la carte", false);
+      });
+    } else {
+      manualLocationMarker.setLatLng(position);
+    }
+    if (moveMap) manualLocationMap.setView(position, 15);
+  }
+
+  manualLocationSelection.textContent = `${label}. Tu peux déplacer le repère pour préciser le point.`;
+  manualLocationSelection.hidden = false;
+}
+
+async function searchManualLocation(event) {
+  event.preventDefault();
+  const query = manualLocationQuery.value.trim();
+  if (query.length < 3) {
+    manualLocationStatus.textContent = "Saisis au moins trois caractères pour chercher une adresse.";
+    manualLocationStatus.hidden = false;
+    return;
+  }
+
+  manualLocationSearchButton.disabled = true;
+  manualLocationStatus.textContent = "Recherche des adresses en France…";
+  manualLocationStatus.hidden = false;
+  manualLocationResults.replaceChildren();
+  manualLocationResults.hidden = true;
+  manualLocationSelection.textContent = "";
+  manualLocationSelection.hidden = true;
+  selectedManualLocation = null;
+  if (manualLocationMarker) {
+    manualLocationMap.removeLayer(manualLocationMarker);
+    manualLocationMarker = null;
+  }
+  try {
+    const url = new URL("https://data.geopf.fr/geocodage/search");
+    url.searchParams.set("q", query);
+    url.searchParams.set("index", "address");
+    url.searchParams.set("limit", "5");
+    const response = await fetch(url, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error(`Le service d’adresses répond ${response.status}.`);
+    const result = await response.json();
+    const features = (result.features ?? []).filter((feature) => (
+      Array.isArray(feature.geometry?.coordinates)
+      && Number.isFinite(feature.geometry.coordinates[0])
+      && Number.isFinite(feature.geometry.coordinates[1])
+      && typeof feature.properties?.label === "string"
+    ));
+
+    if (features.length === 0) {
+      manualLocationStatus.textContent = "Aucune adresse trouvée en France. Essaie avec une adresse ou une commune plus précise.";
+      return;
+    }
+
+    for (const feature of features) {
+      const [longitude, latitude] = feature.geometry.coordinates;
+      const option = document.createElement("button");
+      option.className = "manual-location-result";
+      option.type = "button";
+      option.textContent = feature.properties.label;
+      option.addEventListener("click", () => {
+        manualLocationQuery.value = feature.properties.label;
+        setManualLocation(latitude, longitude, feature.properties.label);
+        manualLocationStatus.textContent = "Adresse sélectionnée. Vérifie le point sur la carte, puis choisis un mode de création.";
+        manualLocationResults.hidden = true;
+      });
+      manualLocationResults.append(option);
+    }
+    manualLocationStatus.textContent = "Choisis une adresse dans les résultats.";
+    manualLocationResults.hidden = false;
+  } catch (error) {
+    manualLocationStatus.textContent = error.name === "TimeoutError"
+      ? "La recherche d’adresse a expiré. Réessaie."
+      : error.message || "Impossible de rechercher cette adresse.";
+  } finally {
+    manualLocationSearchButton.disabled = false;
+  }
 }
 
 async function generateSharedEnigma(mode) {
@@ -263,22 +400,25 @@ async function generateSharedEnigma(mode) {
     let result = await response.json();
 
     if (response.status === 428 && result.needsLocation) {
-      if (!navigator.geolocation) {
-        throw new Error("La géolocalisation n’est pas disponible dans ce navigateur.");
-      }
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          maximumAge: 60000,
-          timeout: 15000,
+      let location = selectedManualLocation;
+      if (!location) {
+        if (!navigator.geolocation) {
+          throw new Error("La géolocalisation n’est pas disponible dans ce navigateur. Cherche une adresse ou choisis un point sur la carte.");
+        }
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            maximumAge: 60000,
+            timeout: 15000,
+          });
         });
-      });
-      const { latitude, longitude, accuracy } = position.coords;
-      if (accuracy > 250) {
-        throw new Error("La position est trop imprécise. Autorise la localisation précise et réessaie à l’extérieur.");
+        location = position.coords;
+        if (location.accuracy > 250) {
+          throw new Error("La position est trop imprécise. Autorise la localisation précise et réessaie à l’extérieur, ou choisis un point sur la carte.");
+        }
       }
       generatedEnigmaStatus.textContent = "Recherche d’un lieu naturel puis création de l’énigme…";
-      response = await requestSharedEnigma({ latitude, longitude, accuracy });
+      response = await requestSharedEnigma(location);
       result = await response.json();
     }
 
