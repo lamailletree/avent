@@ -65,16 +65,17 @@ Quand une énigme manque pour aujourd’hui ou une date passée, le premier
 visiteur peut choisir une énigme modèle ou Gemini. Le navigateur demande alors
 la permission de localisation (avec une précision GPS de 250 m ou moins), ou
 permet de rechercher une adresse en France et de choisir un point sur la carte.
-La recherche d’adresse utilise la Géoplateforme de l’IGN et le fond de carte
-utilise les tuiles OpenStreetMap. Le serveur cherche ensuite un lieu de plein
-air cartographié dans OpenStreetMap à une distance maximale d’un kilomètre,
-autour de la position ou du point choisi.
+La recherche d’adresse et le fond de carte utilisent la Géoplateforme de l’IGN.
+Avec le GPS, le serveur cherche un lieu de plein air dans OpenStreetMap à une
+distance maximale d’un kilomètre. Avec un point choisi manuellement, il cherche
+un point d’intérêt naturel dans la Géoplateforme à moins de 500 mètres, sans
+appeler OpenStreetMap.
 L’énigme est ensuite enregistrée par date dans Upstash Redis : le même texte et
 le même lieu s’affichent à tous les visiteurs, même s’ils vivent ailleurs.
 La position GPS n’est pas enregistrée dans le puzzle. S’il n’y a pas de lieu
 approprié, la génération échoue plutôt que de proposer un lieu urbain. Les
-services de géocodage et de tuiles restent soumis à leurs conditions d’usage
-et à leur disponibilité.
+services de géocodage, de tuiles et de points d’intérêt restent soumis à leurs
+conditions d’usage et à leur disponibilité ; la couverture IGN peut varier.
 
 Pour activer ce comportement sur Vercel :
 
@@ -93,9 +94,11 @@ par mois). Le quota gratuit de Gemini dépend du modèle et peut changer
 les données de l’offre gratuite peuvent servir à améliorer ses produits. Le
 choix Gemini demande donc une confirmation avant l’envoi du nom et du type du
 lieu à Google. L’option modèle n’envoie pas ces données à Gemini. Les services
-publics OpenStreetMap sont gratuits, soumis à leurs règles d’usage et sans
-garantie de disponibilité. Les cartes et résultats OSM sont attribués aux
-[contributeurs OpenStreetMap](https://www.openstreetmap.org/copyright).
+publics OpenStreetMap sont soumis à leurs règles d’usage et sans garantie de
+disponibilité. Les cartes et résultats sont attribués selon leur source :
+[contributeurs OpenStreetMap](https://www.openstreetmap.org/copyright) pour le
+parcours GPS, ou [Géoplateforme](https://cartes.gouv.fr/cgu) pour le parcours
+manuel.
 
 Les puzzles partagés sont conservés sans date d’expiration dans Redis. Le
 premier visiteur qui crée l’énigme d’une date choisit donc le lieu et le mode

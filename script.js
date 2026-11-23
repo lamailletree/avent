@@ -29,6 +29,7 @@ const generatedEnigmaResult = document.querySelector("#generated-enigma-result")
 const generatedEnigmaText = document.querySelector("#generated-enigma-text");
 const generatedEnigmaPlace = document.querySelector("#generated-enigma-place");
 const generatedPlaceLink = document.querySelector("#generated-place-link");
+const placeAttribution = document.querySelector("#place-attribution");
 const imageByNumber = new Map();
 let cloudEnigmaImages = new Map();
 let googleDriveServicePromise;
@@ -273,9 +274,10 @@ function initializeManualLocationMap() {
   if (!manualLocationMap) {
     manualLocationMap = L.map("manual-location-map", { scrollWheelZoom: false })
       .setView([46.6, 2.4], 6);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    L.tileLayer("https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}", {
+      minZoom: 6,
+      maxZoom: 16,
+      attribution: '&copy; <a href="https://cartes.gouv.fr/cgu">IGN - Géoplateforme</a>',
     }).addTo(manualLocationMap);
     manualLocationMap.on("click", (event) => {
       setManualLocation(event.latlng.lat, event.latlng.lng, "Point choisi sur la carte", false);
@@ -401,7 +403,9 @@ async function generateSharedEnigma(mode) {
 
     if (response.status === 428 && result.needsLocation) {
       let location = selectedManualLocation;
+      let locationSource = "manual";
       if (!location) {
+        locationSource = "gps";
         if (!navigator.geolocation) {
           throw new Error("La géolocalisation n’est pas disponible dans ce navigateur. Cherche une adresse ou choisis un point sur la carte.");
         }
@@ -418,7 +422,7 @@ async function generateSharedEnigma(mode) {
         }
       }
       generatedEnigmaStatus.textContent = "Recherche d’un lieu naturel puis création de l’énigme…";
-      response = await requestSharedEnigma(location);
+      response = await requestSharedEnigma({ ...location, locationSource });
       result = await response.json();
     }
 
@@ -428,8 +432,18 @@ async function generateSharedEnigma(mode) {
     generatedEnigmaPlace.textContent = result.alreadyShared
       ? "Cette énigme est déjà partagée pour cette date."
       : "Cette énigme est maintenant partagée pour cette date.";
-    generatedPlaceLink.href = `https://www.openstreetmap.org/${encodeURIComponent(result.osmId)}`;
+    generatedPlaceLink.href = result.placeUrl
+      ?? `https://www.openstreetmap.org/${encodeURIComponent(result.osmId)}`;
+    generatedPlaceLink.textContent = result.placeSource === "ign"
+      ? "Voir le lieu sur la carte IGN"
+      : "Voir le lieu sur OpenStreetMap";
     generatedPlaceLink.hidden = false;
+    placeAttribution.href = result.placeSource === "ign"
+      ? "https://cartes.gouv.fr/cgu"
+      : "https://www.openstreetmap.org/copyright";
+    placeAttribution.textContent = result.placeSource === "ign"
+      ? "© IGN - Géoplateforme"
+      : "© contributeurs OpenStreetMap";
     generatedEnigmaResult.hidden = false;
     generatedEnigmaStatus.textContent = "";
     generatedEnigmaStatus.hidden = true;

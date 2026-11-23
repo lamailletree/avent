@@ -1,6 +1,8 @@
 const { createHash, randomUUID } = require("node:crypto");
 
 const overpassUrl = "https://overpass-api.de/api/interpreter";
+const geoplateformeGeocodingUrl = "https://data.geopf.fr/geocodage/reverse";
+const ignPoiCategories = "hydrographie,élément topographique ou forestier,zone d'activité ou d'intérêt";
 const generationLimitPerDay = 5;
 
 function sendJson(response, status, body) {
@@ -68,6 +70,66 @@ function placeCategory(tags) {
   return "lieu de plein air";
 }
 
+function ignPlaceCategory(categories) {
+  const values = new Set(categories);
+  if (values.has("plage")) return "plage";
+  if (values.has("bois") || values.has("arbre")) return "forêt";
+  if ([
+    "source",
+    "cours d'eau",
+    "point d'eau",
+    "marais",
+    "plan d'eau",
+    "lac",
+    "mare",
+    "écoulement naturel",
+    "glacier, névé",
+    "lagune",
+    "baie",
+    "résurgence",
+    "estuaire",
+    "ravine",
+  ].some((category) => values.has(category))) {
+    return "point d’eau naturel";
+  }
+  if (values.has("sentier de découverte")) return "sentier";
+  if ([
+    "parc de loisirs",
+    "camping",
+    "baignade surveillée",
+    "site d'escalade",
+    "site skiable",
+    "refuge",
+  ].some((category) => values.has(category))) {
+    return "parc";
+  }
+  if ([
+    "plaine",
+    "sommet",
+    "escarpement",
+    "rochers",
+    "gorge",
+    "île",
+    "vallée",
+    "dépression",
+    "grotte",
+    "crête",
+    "col",
+    "montagne",
+    "cirque",
+    "gouffre",
+    "pic",
+    "dune",
+    "cap",
+    "récif",
+    "volcan",
+    "isthme",
+  ].some((category) => values.has(category))) {
+    return "lieu de plein air";
+  }
+  return null;
+}
+
 async function findNearbyOutdoorPlace(location) {
   const searchRadius = 1000 - Math.ceil(location.accuracy);
   const query = `
@@ -109,6 +171,55 @@ out center tags 60;`;
       };
     })
     .filter((place) => place && place.distance <= searchRadius)
+    .sort((first, second) => first.distance - second.distance);
+
+  return candidates[0] ?? null;
+}
+
+async function findNearbyOutdoorPlaceOnIgn(location) {
+  const searchGeometry = JSON.stringify({
+    type: "Circle",
+    coordinates: [location.lon, location.lat],
+    radius: 500,
+  });
+  const params = new URLSearchParams({
+    searchgeom: searchGeometry,
+    lon: String(location.lon),
+    lat: String(location.lat),
+    index: "poi",
+    category: ignPoiCategories,
+    limit: "50",
+  });
+  const response = await fetch(`${geoplateformeGeocodingUrl}?${params}`, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!response.ok) throw new Error(`La Géoplateforme répond ${response.status}.`);
+
+  const data = await response.json();
+  const candidates = (data.features ?? [])
+    .map((feature) => {
+      const [lon, lat] = feature.geometry?.coordinates ?? [];
+      const categories = feature.properties?.category;
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Array.isArray(categories)) {
+        return null;
+      }
+      const category = ignPlaceCategory(categories);
+      if (!category) return null;
+      const name = feature.properties?.toponym
+        ?? feature.properties?.name?.[0]
+        ?? "";
+      return {
+        id: feature.properties?.extrafields?.cleabs ?? name,
+        name: typeof name === "string" ? name.trim().slice(0, 100) : "",
+        category,
+        distance: Number.isFinite(feature.properties?.distance)
+          ? feature.properties.distance
+          : haversineDistanceMeters(location, { lat, lon }),
+        coordinates: { lat, lon },
+      };
+    })
+    .filter((place) => place && place.distance <= 500)
     .sort((first, second) => first.distance - second.distance);
 
   return candidates[0] ?? null;
@@ -208,7 +319,14 @@ module.exports = async function handler(request, response) {
     return sendJson(response, 405, { error: "Méthode non autorisée." });
   }
 
-  const { latitude, longitude, accuracy, mode, calendarDate } = request.body ?? {};
+  const {
+    latitude,
+    longitude,
+    accuracy,
+    mode,
+    calendarDate,
+    locationSource = "gps",
+  } = request.body ?? {};
   if (typeof calendarDate !== "string"
     || !/^\d{4}-\d{2}-\d{2}$/.test(calendarDate)
     || Number.isNaN(Date.parse(`${calendarDate}T00:00:00Z`))
@@ -218,6 +336,9 @@ module.exports = async function handler(request, response) {
   const latestAllowedDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   if (calendarDate > latestAllowedDate) {
     return sendJson(response, 400, { error: "Une énigme ne peut être générée que pour une date passée ou en cours." });
+  }
+  if (!["gps", "manual"].includes(locationSource)) {
+    return sendJson(response, 400, { error: "Choisis une source de localisation valide." });
   }
 
   let lockToken;
@@ -242,7 +363,7 @@ module.exports = async function handler(request, response) {
         if (shared) return sendJson(response, 200, { ...shared, alreadyShared: true });
       }
       return sendJson(response, 428, {
-        error: "Cette énigme n’existe pas encore. Autorise la localisation pour la créer.",
+        error: "Cette énigme n’existe pas encore. Autorise le GPS ou choisis un point sur la carte pour la créer.",
         needsLocation: true,
       });
     }
@@ -264,19 +385,29 @@ module.exports = async function handler(request, response) {
     if (rechecked) return sendJson(response, 200, { ...JSON.parse(rechecked), alreadyShared: true });
 
     await enforceGenerationLimit(request);
-    const place = await findNearbyOutdoorPlace({ lat: latitude, lon: longitude, accuracy });
+    const location = { lat: latitude, lon: longitude, accuracy };
+    const place = locationSource === "manual"
+      ? await findNearbyOutdoorPlaceOnIgn(location)
+      : await findNearbyOutdoorPlace(location);
     if (!place) {
       return sendJson(response, 404, {
-        error: "Aucun lieu naturel correspondant n’a été trouvé à moins d’un kilomètre.",
+        error: locationSource === "manual"
+          ? "Aucun lieu naturel IGN correspondant n’a été trouvé à moins de 500 mètres. Essaie un autre point."
+          : "Aucun lieu naturel correspondant n’a été trouvé à moins d’un kilomètre.",
       });
     }
     const text = mode === "gemini" ? await makeGeminiPuzzle(place) : makeTemplatePuzzle(place);
+    const placeUrl = locationSource === "manual"
+      ? `https://www.geoportail.gouv.fr/carte?c=${place.coordinates.lon},${place.coordinates.lat}&z=15&l0=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2`
+      : `https://www.openstreetmap.org/${encodeURIComponent(place.id)}`;
     const sharedPuzzle = {
       text,
       source: mode,
       placeName: place.name,
       category: place.category,
-      osmId: place.id,
+      placeSource: locationSource === "manual" ? "ign" : "osm",
+      placeUrl,
+      ...(locationSource === "gps" ? { osmId: place.id } : {}),
       calendarDate,
       createdAt: new Date().toISOString(),
     };

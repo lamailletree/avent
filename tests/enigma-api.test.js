@@ -10,6 +10,7 @@ const handler = require("../api/enigma.js");
 const values = new Map();
 const counters = new Map();
 let overpassCalls = 0;
+let ignCalls = 0;
 let geminiCalls = 0;
 let noNearbyPlaces = false;
 
@@ -43,6 +44,24 @@ global.fetch = async (url, options = {}) => {
       throw new Error(`Unexpected Redis command: ${command}`);
     }
     return Response.json({ result });
+  }
+
+  if (String(url).startsWith("https://data.geopf.fr/geocodage/reverse")) {
+    ignCalls += 1;
+    const requestUrl = new URL(url);
+    assert.equal(requestUrl.searchParams.get("index"), "poi");
+    assert.equal(JSON.parse(requestUrl.searchParams.get("searchgeom")).radius, 500);
+    return Response.json({
+      features: [{
+        geometry: { coordinates: [2.1001, 48.1001] },
+        properties: {
+          toponym: "Bois des tests",
+          category: ["bois", "élément topographique ou forestier"],
+          distance: 15,
+          extrafields: { cleabs: "test-ign-id" },
+        },
+      }],
+    });
   }
 
   if (String(url).startsWith("https://overpass-api.de")) {
@@ -159,6 +178,21 @@ test("gates location, generates both modes and shares the first puzzle by date",
   });
   assert.equal(noPlace.statusCode, 404);
   noNearbyPlaces = false;
+
+  const overpassCallsBeforeManual = overpassCalls;
+  const manual = await call({
+    calendarDate: dateOffset(-5),
+    mode: "openstreetmap",
+    latitude: 48.1,
+    longitude: 2.1,
+    accuracy: 0,
+    locationSource: "manual",
+  });
+  assert.equal(manual.statusCode, 200);
+  assert.equal(manual.body.placeSource, "ign");
+  assert.equal(manual.body.placeName, "Bois des tests");
+  assert.equal(ignCalls, 1);
+  assert.equal(overpassCalls, overpassCallsBeforeManual);
 
   const future = await call({ calendarDate: dateOffset(3), mode: "openstreetmap" });
   assert.equal(future.statusCode, 400);
