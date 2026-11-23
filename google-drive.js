@@ -180,7 +180,11 @@ async function updateManifest(monthKey, update) {
 }
 
 function publicImageUrl(fileId, revision) {
-  return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(fileId)}&v=${revision}`;
+  const url = new URL(`${driveApi}/files/${encodeURIComponent(fileId)}`);
+  url.searchParams.set("alt", "media");
+  url.searchParams.set("key", googleConfig.googleDriveApiKey);
+  url.searchParams.set("v", String(revision));
+  return url.toString();
 }
 
 export function isAuthorizedAdmin() {
