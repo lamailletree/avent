@@ -49,6 +49,10 @@ Google personnel, partagés avec Gmail et Photos).
 7. Copie les deux identifiants affichés dans `google-config.js`, redéploie le
    site, puis reconnecte-toi pour téléverser les images par mois.
 
+L’administration est accessible depuis le menu supérieur, sur `admin.html`.
+Après connexion, elle permet de parcourir les dossiers et fichiers du dossier
+Drive configuré, ainsi que d’ajouter ou de supprimer les images du calendrier.
+
 Le dossier dédié et ses images sont publics en lecture : n’y place aucun
 document privé. Les modifications nécessitent un jeton Google associé au
 compte administrateur. L’API Drive ne facture pas les téléversements, mais

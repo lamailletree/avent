@@ -10,61 +10,25 @@
     <script src="script.js" defer></script>
   </head>
   <body>
+    <nav class="site-nav" aria-label="Navigation principale">
+      <a class="site-brand" href="index.html">À vous de jouer&nbsp;!</a>
+      <div class="site-nav-links">
+        <a class="site-nav-link active" href="index.html" aria-current="page">Calendrier</a>
+        <a class="site-nav-link" href="admin.html">Administration</a>
+      </div>
+    </nav>
+
     <main>
       <header class="intro">
         <p class="eyebrow">Jeu d’aventure</p>
         <h1>À vous de jouer&nbsp;!</h1>
-        <label class="month-picker" for="month-picker">
-          Choisir un mois
-          <input id="month-picker" type="month">
-        </label>
-        <button class="admin-toggle" id="admin-toggle" type="button" aria-expanded="false" aria-controls="admin-panel">
-          Administration
-        </button>
-      </header>
-
-      <section class="admin-panel" id="admin-panel" aria-labelledby="admin-title" hidden>
-        <h2 id="admin-title">Administration du calendrier</h2>
-        <p class="admin-status" id="admin-status" role="status">Connecte-toi avec le compte Google administrateur.</p>
-        <button class="admin-button" id="google-sign-in" type="button">Se connecter avec Google</button>
-        <div class="admin-editor" id="admin-editor" hidden>
-          <button class="admin-button secondary" id="google-sign-out" type="button">Déconnexion</button>
-          <div class="drive-folder-setup" id="drive-folder-setup" hidden>
-            <p>Crée un dossier Drive dédié. Son contenu sera lisible par les visiteurs du calendrier.</p>
-            <button class="admin-button" id="create-drive-folder" type="button">Créer le dossier public</button>
-            <div class="drive-folder-result" id="drive-folder-result" hidden>
-              <p>Ajoute ces identifiants dans <code>google-config.js</code>, puis redéploie le site :</p>
-              <pre id="drive-folder-config"></pre>
-              <button class="admin-button secondary" id="copy-drive-folder" type="button">Copier</button>
-            </div>
-          </div>
-          <div class="drive-asset-controls" id="drive-asset-controls" hidden>
-            <div class="admin-toolbar">
-              <label for="admin-month">Mois à modifier</label>
-              <input id="admin-month" type="month">
-            </div>
-            <div class="admin-upload">
-              <label for="background-file">Image de fond du mois</label>
-              <input id="background-file" type="file" accept="image/png,image/jpeg,image/webp">
-              <div class="admin-actions">
-                <button class="admin-button" id="upload-background" type="button">Enregistrer le fond</button>
-                <button class="admin-button secondary" id="delete-background" type="button">Supprimer le fond</button>
-              </div>
-            </div>
-            <form class="admin-upload" id="case-upload-form">
-              <label for="case-number">Image PNG d’une case</label>
-              <div class="case-upload-fields">
-                <input id="case-number" type="number" min="1" max="31" value="1" required>
-                <input id="case-file" type="file" accept="image/png" required>
-              </div>
-              <div class="admin-actions">
-                <button class="admin-button" type="submit">Enregistrer la case</button>
-                <button class="admin-button secondary" id="delete-case" type="button">Supprimer cette image</button>
-              </div>
-            </form>
-          </div>
+        <div class="month-picker" role="group" aria-label="Choisir le mois du calendrier">
+          <button class="month-nav-button" id="previous-month" type="button" aria-label="Mois précédent">‹</button>
+          <span class="month-picker-label" id="month-picker-label" aria-live="polite"></span>
+          <button class="month-nav-button" id="next-month" type="button" aria-label="Mois suivant">›</button>
+          <button class="month-current-button" id="current-month" type="button">Aujourd’hui</button>
         </div>
-      </section>
+      </header>
 
       <p class="calendar-status" id="calendar-status" role="status" hidden></p>
 

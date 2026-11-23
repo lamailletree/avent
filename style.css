@@ -24,10 +24,56 @@ body.modal-open {
   overflow: hidden;
 }
 
+.site-nav {
+  position: sticky;
+  z-index: 4;
+  top: 0;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px max(20px, calc((100% - 1100px) / 2));
+  border-bottom: 1px solid rgb(189 203 189 / 65%);
+  background: rgb(250 248 237 / 92%);
+  box-shadow: 0 4px 18px rgb(46 64 50 / 6%);
+  backdrop-filter: blur(14px);
+}
+
+.site-brand {
+  color: #294438;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.site-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.site-nav-link {
+  padding: 9px 13px;
+  border-radius: 999px;
+  color: #53645a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.site-nav-link:hover,
+.site-nav-link.active {
+  background: #e4ecdf;
+  color: #294438;
+}
+
 main {
   width: min(100% - 24px, 1100px);
   margin: 0 auto;
-  padding: 44px 0 32px;
+  padding: 36px 0 48px;
 }
 
 .intro {
@@ -55,23 +101,63 @@ h1 {
 .month-picker {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 18px;
-  color: #596961;
-  font-size: 0.95rem;
+  gap: 8px;
+  margin-top: 22px;
+  padding: 6px;
+  border: 1px solid #d5dfd1;
+  border-radius: 999px;
+  background: rgb(255 253 246 / 92%);
+  box-shadow: 0 8px 24px rgb(46 64 50 / 8%);
+}
+
+.month-picker-label {
+  min-width: 150px;
+  color: #294438;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.month-nav-button,
+.month-current-button {
+  display: grid;
+  min-height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #315744;
+  cursor: pointer;
+  font: inherit;
   font-weight: 700;
 }
 
-.month-picker input {
-  padding: 8px 10px;
-  border: 1px solid #bdcbbd;
-  border-radius: 8px;
-  background: #fffdf6;
-  color: #294438;
-  font: inherit;
+.month-nav-button {
+  width: 40px;
+  font-size: 1.8rem;
+  line-height: 1;
 }
 
-.admin-toggle,
+.month-current-button {
+  padding: 0 14px;
+  background: #e7eee2;
+  font-size: 0.85rem;
+}
+
+.month-nav-button:hover,
+.month-current-button:hover {
+  background: #d7e2d5;
+}
+
+.month-nav-button:focus-visible,
+.month-current-button:focus-visible,
+.site-nav-link:focus-visible,
+.site-brand:focus-visible {
+  outline: 3px solid #4c795c;
+  outline-offset: 2px;
+}
+
 .admin-button {
   padding: 9px 14px;
   border: 1px solid #456b55;
@@ -83,12 +169,6 @@ h1 {
   font-weight: 700;
 }
 
-.admin-toggle {
-  display: block;
-  margin: 14px auto 0;
-}
-
-.admin-toggle:hover,
 .admin-button:hover:not(:disabled) {
   background: #315744;
 }
@@ -120,9 +200,50 @@ h1 {
 }
 
 .admin-panel h2 {
-  margin: 0 0 8px;
+  margin: 0;
   color: #294438;
   font-family: Georgia, "Times New Roman", serif;
+}
+
+.admin-panel h3 {
+  margin: 0;
+  color: #294438;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.2rem;
+}
+
+.admin-intro {
+  margin-bottom: 28px;
+}
+
+.admin-lead {
+  margin: 12px 0 0;
+  color: #596961;
+}
+
+.admin-heading,
+.admin-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.admin-heading .eyebrow,
+.admin-section-heading .eyebrow {
+  margin-bottom: 6px;
+}
+
+.admin-section {
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid #e1e7de;
+}
+
+.admin-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
 }
 
 .drive-folder-setup {
@@ -165,31 +286,24 @@ h1 {
   color: #8b3b32;
 }
 
-.admin-toolbar,
 .admin-upload {
   display: grid;
   gap: 10px;
   margin-top: 18px;
 }
 
-.admin-toolbar {
-  grid-template-columns: auto minmax(150px, 1fr) auto;
-  align-items: center;
-}
-
 .admin-upload {
+  min-width: 0;
   padding-top: 16px;
   border-top: 1px solid #e1e7de;
 }
 
-.admin-upload label,
-.admin-toolbar label {
+.admin-upload label {
   color: #294438;
   font-weight: 700;
 }
 
-.admin-upload input,
-.admin-toolbar input {
+.admin-upload input {
   min-width: 0;
   color: #35473d;
   font: inherit;
@@ -206,12 +320,162 @@ h1 {
   gap: 10px;
 }
 
+.admin-actions {
+  align-items: center;
+}
+
 .case-upload-fields input[type="number"] {
   width: 90px;
   padding: 8px;
   border: 1px solid #bdcbbd;
   border-radius: 8px;
   font: inherit;
+}
+
+.admin-month-picker {
+  flex: 0 0 auto;
+  margin: 0;
+  box-shadow: none;
+}
+
+.admin-month-picker .month-picker-label {
+  min-width: 132px;
+  font-size: 0.9rem;
+}
+
+.admin-month-picker .month-nav-button,
+.admin-month-picker .month-current-button {
+  min-height: 36px;
+}
+
+.admin-month-picker .month-nav-button {
+  width: 36px;
+}
+
+.drive-browser-status {
+  min-height: 1.5em;
+  margin: 16px 0 10px;
+  color: #596961;
+  font-size: 0.9rem;
+}
+
+.drive-browser-status[data-error="true"] {
+  color: #8b3b32;
+}
+
+.drive-breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.drive-breadcrumb {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #315744;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+button.drive-breadcrumb {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.drive-breadcrumb[aria-current="location"] {
+  color: #596961;
+}
+
+.drive-breadcrumb-separator {
+  color: #9aa89a;
+}
+
+.drive-file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.drive-file-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #d5dfd1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgb(46 64 50 / 5%);
+}
+
+.drive-file-preview,
+.drive-file-icon {
+  display: grid;
+  width: 100%;
+  height: 150px;
+  place-items: center;
+  object-fit: cover;
+  background: #f0f3eb;
+}
+
+.drive-file-icon {
+  color: #668271;
+  font-size: 2.8rem;
+}
+
+.drive-file-icon.folder {
+  background: #f5f2e7;
+}
+
+.drive-file-info {
+  min-width: 0;
+  padding: 12px 12px 0;
+}
+
+.drive-file-info h4 {
+  overflow: hidden;
+  margin: 0;
+  color: #294438;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drive-file-info p {
+  margin: 6px 0 0;
+  color: #68766d;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.drive-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: auto;
+  padding: 12px;
+}
+
+.text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #315744;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.drive-file-actions a {
+  text-decoration: none;
 }
 
 .calendar-status {
@@ -421,9 +685,47 @@ code {
 }
 
 @media (max-width: 560px) {
+  .site-nav {
+    min-height: 58px;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .site-brand {
+    font-size: 0.88rem;
+  }
+
+  .site-nav-links {
+    gap: 0;
+  }
+
+  .site-nav-link {
+    padding: 8px 7px;
+    font-size: 0.75rem;
+  }
+
   main {
     width: calc(100% - 12px);
-    padding-top: 28px;
+    padding-top: 26px;
+  }
+
+  .month-picker {
+    gap: 4px;
+  }
+
+  .month-picker-label {
+    min-width: 128px;
+    font-size: 0.9rem;
+  }
+
+  .month-nav-button {
+    width: 34px;
+    min-height: 36px;
+  }
+
+  .month-current-button {
+    padding: 0 10px;
+    font-size: 0.78rem;
   }
 
   .board {
@@ -438,8 +740,46 @@ code {
     border-radius: 5px;
   }
 
-  .admin-toolbar {
+  .admin-heading,
+  .admin-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-upload-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-month-picker {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .admin-month-picker .month-picker-label {
+    min-width: 100px;
+  }
+
+  .admin-month-picker .month-nav-button,
+  .admin-month-picker .month-current-button {
+    min-height: 32px;
+  }
+
+  .admin-month-picker .month-nav-button {
+    width: 30px;
+  }
+
+  .admin-month-picker .month-current-button {
+    padding: 0 8px;
+    font-size: 0.72rem;
+  }
+
+  .drive-file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .drive-file-preview,
+  .drive-file-icon {
+    height: 120px;
   }
 
   .admin-actions .admin-button {

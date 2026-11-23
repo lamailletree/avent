@@ -79,13 +79,13 @@ async function readResponse(response, authenticated = false) {
   throw new Error(`Google Drive : ${details}`);
 }
 
-async function listFiles({ name } = {}) {
+async function listFiles({ name, parentId = googleConfig.googleDriveFolderId } = {}) {
   requireDriveAccess();
   const url = new URL(`${driveApi}/files`);
-  const query = [`'${googleConfig.googleDriveFolderId}' in parents`, "trashed = false"];
+  const query = [`'${parentId}' in parents`, "trashed = false"];
   if (name) query.push(`name = '${name}'`);
   url.searchParams.set("q", query.join(" and "));
-  url.searchParams.set("fields", "nextPageToken,files(id,name,mimeType)");
+  url.searchParams.set("fields", "nextPageToken,files(id,name,mimeType,modifiedTime,size,webViewLink)");
   url.searchParams.set("pageSize", "1000");
 
   const files = [];
@@ -185,6 +185,16 @@ function publicImageUrl(fileId, revision) {
   url.searchParams.set("key", googleConfig.googleDriveApiKey);
   url.searchParams.set("v", String(revision));
   return url.toString();
+}
+
+export async function listDriveAssets(parentId) {
+  const files = await listFiles(parentId ? { parentId } : {});
+  return files.map((file) => ({
+    ...file,
+    previewUrl: file.mimeType.startsWith("image/")
+      ? publicImageUrl(file.id, file.modifiedTime ?? "")
+      : null,
+  }));
 }
 
 export function isAuthorizedAdmin() {
