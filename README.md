@@ -67,9 +67,10 @@ la permission de localisation (avec une précision GPS de 250 m ou moins), ou
 permet de rechercher une adresse en France et de choisir un point sur la carte.
 La recherche d’adresse et le fond de carte utilisent la Géoplateforme de l’IGN.
 Avec le GPS, le serveur cherche un lieu de plein air dans OpenStreetMap à une
-distance maximale d’un kilomètre. Avec un point choisi manuellement, il cherche
-un point d’intérêt naturel dans la Géoplateforme à moins de 500 mètres, sans
-appeler OpenStreetMap.
+distance maximale d’un kilomètre. Avec un point choisi manuellement, le mode
+modèle cherche un point d’intérêt naturel dans la Géoplateforme à moins de
+500 mètres, sans appeler OpenStreetMap ; le mode Gemini appelle directement
+Gemini sans recherche de lieu dans un autre service cartographique.
 L’énigme est ensuite enregistrée par date dans Upstash Redis : le même texte et
 le même lieu s’affichent à tous les visiteurs, même s’ils vivent ailleurs.
 La position GPS n’est pas enregistrée dans le puzzle. S’il n’y a pas de lieu

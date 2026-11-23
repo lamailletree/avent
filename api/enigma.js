@@ -386,9 +386,19 @@ module.exports = async function handler(request, response) {
 
     await enforceGenerationLimit(request);
     const location = { lat: latitude, lon: longitude, accuracy };
-    const place = locationSource === "manual"
-      ? await findNearbyOutdoorPlaceOnIgn(location)
-      : await findNearbyOutdoorPlace(location);
+    let place;
+    if (locationSource === "manual" && mode === "gemini") {
+      place = {
+        id: "manual",
+        name: "",
+        category: "lieu de plein air",
+        coordinates: location,
+      };
+    } else {
+      place = locationSource === "manual"
+        ? await findNearbyOutdoorPlaceOnIgn(location)
+        : await findNearbyOutdoorPlace(location);
+    }
     if (!place) {
       return sendJson(response, 404, {
         error: locationSource === "manual"

@@ -158,6 +158,22 @@ test("gates location, generates both modes and shares the first puzzle by date",
   assert.equal(ai.body.text, "Une énigme créée avec Gemini.");
   assert.equal(geminiCalls, 1);
 
+  const ignCallsBeforeManualGemini = ignCalls;
+  const overpassCallsBeforeManualGemini = overpassCalls;
+  const manualAi = await call({
+    calendarDate: dateOffset(-6),
+    mode: "gemini",
+    latitude: 48.1,
+    longitude: 2.1,
+    accuracy: 0,
+    locationSource: "manual",
+  });
+  assert.equal(manualAi.statusCode, 200);
+  assert.equal(manualAi.body.text, "Une énigme créée avec Gemini.");
+  assert.equal(ignCalls, ignCallsBeforeManualGemini);
+  assert.equal(overpassCalls, overpassCallsBeforeManualGemini);
+  assert.equal(geminiCalls, 2);
+
   const savedKey = process.env.GEMINI_API_KEY;
   const savedModel = process.env.GEMINI_MODEL;
   delete process.env.GEMINI_API_KEY;
