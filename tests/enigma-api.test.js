@@ -47,6 +47,8 @@ global.fetch = async (url, options = {}) => {
 
   if (String(url).startsWith("https://overpass-api.de")) {
     overpassCalls += 1;
+    assert.equal(options.headers["User-Agent"], "Avent/1.0 (+https://github.com/lamailletree/avent)");
+    assert.equal(options.headers.Accept, "application/json");
     const query = new URLSearchParams(options.body).get("data");
     assert.match(query, /around:930,48\.1,2\.1/);
     return Response.json({

@@ -81,7 +81,11 @@ async function findNearbyOutdoorPlace(location) {
 out center tags 60;`;
   const response = await fetch(overpassUrl, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      "User-Agent": "Avent/1.0 (+https://github.com/lamailletree/avent)",
+      Accept: "application/json",
+    },
     body: new URLSearchParams({ data: query }),
     signal: AbortSignal.timeout(12000),
   });
