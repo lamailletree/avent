@@ -13,6 +13,7 @@ let overpassCalls = 0;
 let ignCalls = 0;
 let geminiCalls = 0;
 let noNearbyPlaces = false;
+let geminiTimeout = false;
 
 global.fetch = async (url, options = {}) => {
   if (String(url).startsWith(process.env.UPSTASH_REDIS_REST_URL)) {
@@ -85,6 +86,7 @@ global.fetch = async (url, options = {}) => {
 
   if (String(url).includes("generativelanguage.googleapis.com")) {
     geminiCalls += 1;
+    if (geminiTimeout) throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
     return Response.json({
       candidates: [{ content: { parts: [{ text: "Une énigme créée avec Gemini." }] } }],
     });
@@ -173,6 +175,19 @@ test("gates location, generates both modes and shares the first puzzle by date",
   assert.equal(ignCalls, ignCallsBeforeManualGemini);
   assert.equal(overpassCalls, overpassCallsBeforeManualGemini);
   assert.equal(geminiCalls, 2);
+
+  geminiTimeout = true;
+  const timedOutGemini = await call({
+    calendarDate: dateOffset(-10),
+    mode: "gemini",
+    latitude: 48.1,
+    longitude: 2.1,
+    accuracy: 0,
+    locationSource: "manual",
+  });
+  assert.equal(timedOutGemini.statusCode, 504);
+  assert.match(timedOutGemini.body.error, /Gemini a mis trop de temps/);
+  geminiTimeout = false;
 
   const savedKey = process.env.GEMINI_API_KEY;
   const savedModel = process.env.GEMINI_MODEL;

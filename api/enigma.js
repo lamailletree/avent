@@ -264,18 +264,28 @@ async function makeGeminiPuzzle(place) {
     `Catégorie du lieu : ${place.category}`,
     `Nom du lieu : ${place.name || "non renseigné"}`,
   ].join("\n");
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 180 },
-      }),
-      signal: AbortSignal.timeout(15000),
-    },
-  );
+  let response;
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.8, maxOutputTokens: 180 },
+        }),
+        signal: AbortSignal.timeout(25000),
+      },
+    );
+  } catch (error) {
+    if (error?.name === "TimeoutError") {
+      const timeoutError = new Error("Gemini a mis trop de temps à répondre. Réessaie ou choisis un modèle plus rapide.");
+      timeoutError.status = 504;
+      throw timeoutError;
+    }
+    throw error;
+  }
   const result = await response.json().catch(() => null);
   if (!response.ok) {
     throw new Error(result?.error?.message ?? `Gemini répond ${response.status}.`);
