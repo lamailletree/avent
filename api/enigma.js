@@ -384,7 +384,9 @@ module.exports = async function handler(request, response) {
     const rechecked = await redis(["GET", puzzleKey]);
     if (rechecked) return sendJson(response, 200, { ...JSON.parse(rechecked), alreadyShared: true });
 
-    await enforceGenerationLimit(request);
+    if (locationSource !== "manual" || mode !== "gemini") {
+      await enforceGenerationLimit(request);
+    }
     const location = { lat: latitude, lon: longitude, accuracy };
     let place;
     if (locationSource === "manual" && mode === "gemini") {

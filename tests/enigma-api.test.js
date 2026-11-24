@@ -210,6 +210,44 @@ test("gates location, generates both modes and shares the first puzzle by date",
   assert.equal(ignCalls, 1);
   assert.equal(overpassCalls, overpassCallsBeforeManual);
 
+  const fifthGeneration = await call({
+    calendarDate: dateOffset(-9),
+    mode: "openstreetmap",
+    latitude: 48.1,
+    longitude: 2.1,
+    accuracy: 70,
+  });
+  assert.equal(fifthGeneration.statusCode, 200);
+
+  const overpassCallsBeforeLimitedGemini = overpassCalls;
+  const ignCallsBeforeLimitedGemini = ignCalls;
+  const geminiCallsBeforeLimitedGemini = geminiCalls;
+  const limitedGemini = await call({
+    calendarDate: dateOffset(-7),
+    mode: "gemini",
+    latitude: 48.1,
+    longitude: 2.1,
+    accuracy: 70,
+  });
+  assert.equal(limitedGemini.statusCode, 429);
+  assert.equal(overpassCalls, overpassCallsBeforeLimitedGemini);
+  assert.equal(ignCalls, ignCallsBeforeLimitedGemini);
+  assert.equal(geminiCalls, geminiCallsBeforeLimitedGemini);
+
+  const manualGemini = await call({
+    calendarDate: dateOffset(-8),
+    mode: "gemini",
+    latitude: 48.1,
+    longitude: 2.1,
+    accuracy: 0,
+    locationSource: "manual",
+  });
+  assert.equal(manualGemini.statusCode, 200);
+  assert.equal(manualGemini.body.text, "Une énigme créée avec Gemini.");
+  assert.equal(overpassCalls, overpassCallsBeforeLimitedGemini);
+  assert.equal(ignCalls, ignCallsBeforeLimitedGemini);
+  assert.equal(geminiCalls, geminiCallsBeforeLimitedGemini + 1);
+
   const future = await call({ calendarDate: dateOffset(3), mode: "openstreetmap" });
   assert.equal(future.statusCode, 400);
 });
