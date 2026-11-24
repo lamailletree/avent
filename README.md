@@ -62,15 +62,14 @@ les énigmes.
 ### Énigmes générées et partagées
 
 Quand une énigme manque pour aujourd’hui ou une date passée, le premier
-visiteur peut choisir une énigme modèle ou Gemini. Le navigateur demande alors
+visiteur peut la créer avec Gemini. Le navigateur demande alors
 la permission de localisation (avec une précision GPS de 250 m ou moins), ou
 permet de rechercher une adresse en France et de choisir un point sur la carte.
 La recherche d’adresse et le fond de carte utilisent la Géoplateforme de l’IGN.
 Avec le GPS, le serveur cherche un lieu de plein air dans OpenStreetMap à une
-distance maximale d’un kilomètre. Avec un point choisi manuellement, le mode
-modèle cherche un point d’intérêt naturel dans la Géoplateforme à moins de
-500 mètres, sans appeler OpenStreetMap ; le mode Gemini appelle directement
-Gemini sans recherche de lieu dans un autre service cartographique.
+distance maximale d’un kilomètre. Avec un point choisi manuellement, Gemini
+reçoit une catégorie générique, sans recherche de lieu dans un autre service
+cartographique.
 L’énigme est ensuite enregistrée par date dans Upstash Redis : le même texte et
 le même lieu s’affichent à tous les visiteurs, même s’ils vivent ailleurs.
 La position GPS n’est pas enregistrée dans le puzzle. S’il n’y a pas de lieu
@@ -82,12 +81,12 @@ Pour activer ce comportement sur Vercel :
 
 1. Crée une base Redis Upstash et renseigne `UPSTASH_REDIS_REST_URL` et
    `UPSTASH_REDIS_REST_TOKEN` dans les variables d’environnement Vercel.
-2. Pour le choix Gemini, crée une clé Google AI Studio et ajoute
-   `GEMINI_API_KEY` à Vercel. La clé reste côté serveur. Choisis également un
-   identifiant de modèle accessible dans ton compte et configure `GEMINI_MODEL`.
-   Un modèle Gemini Flash est préférable pour une réponse plus rapide. Une
-   génération Gemini est interrompue après 20 secondes et signale clairement
-   l’échec pour permettre de réessayer ou de choisir le modèle sans IA.
+2. Crée une clé Google AI Studio et ajoute `GEMINI_API_KEY` à Vercel. La clé
+   reste côté serveur. Par défaut, l’application utilise `gemini-3.5-flash-lite`
+   et essaie `gemini-3.6-flash` si le modèle principal est surchargé ou expire.
+   Tu peux remplacer ces modèles avec `GEMINI_MODEL` et
+   `GEMINI_FALLBACK_MODEL`. Chaque appel est interrompu après 15 secondes,
+   avec un nouvel essai plafonné à 10 secondes.
 3. Redéploie le site. Les tests locaux nécessitent `vercel dev` pour exécuter
    `/api/enigma`.
 
@@ -95,9 +94,9 @@ Upstash propose une offre gratuite avec des quotas ([tarifs](https://upstash.com
 actuellement 250 Mo de données, 10 Go de bande passante et 500 000 commandes
 par mois). Le quota gratuit de Gemini dépend du modèle et peut changer
 ([tarifs](https://ai.google.dev/gemini-api/docs/pricing)) ; Google indique que
-les données de l’offre gratuite peuvent servir à améliorer ses produits. Le
-choix Gemini demande donc une confirmation avant l’envoi du nom et du type du
-lieu à Google. L’option modèle n’envoie pas ces données à Gemini. Les services
+les données de l’offre gratuite peuvent servir à améliorer ses produits. La
+création demande donc une confirmation avant l’envoi du nom et du type du lieu
+à Google. Les services
 publics OpenStreetMap sont soumis à leurs règles d’usage et sans garantie de
 disponibilité. Les cartes et résultats sont attribués selon leur source :
 [contributeurs OpenStreetMap](https://www.openstreetmap.org/copyright) pour le
@@ -105,8 +104,8 @@ parcours GPS, ou [Géoplateforme](https://cartes.gouv.fr/cgu) pour le parcours
 manuel.
 
 Les puzzles partagés sont conservés sans date d’expiration dans Redis. Le
-premier visiteur qui crée l’énigme d’une date choisit donc le lieu et le mode
-de génération pour tous les autres visiteurs de cette date.
+premier visiteur qui crée l’énigme d’une date choisit donc le lieu ; la réponse
+Gemini est ensuite partagée avec tous les autres visiteurs de cette date.
 
 Le dossier dédié et ses images sont publics en lecture : n’y place aucun
 document privé. Les modifications nécessitent un jeton Google associé au

@@ -15,7 +15,6 @@ const modalMessage = document.querySelector("#modal-message");
 const closeButton = document.querySelector("#close-button");
 const imageFrame = document.querySelector(".image-frame");
 const generatedEnigma = document.querySelector("#generated-enigma");
-const enigmaGenerationMode = document.querySelector("#enigma-generation-mode");
 const generateEnigmaButton = document.querySelector("#generate-enigma");
 const geminiConsent = document.querySelector("#gemini-consent");
 const manualLocationForm = document.querySelector("#manual-location-form");
@@ -51,14 +50,12 @@ document.querySelector("#current-month").addEventListener("click", () => {
 });
 renderCalendar();
 
-generateEnigmaButton.addEventListener("click", () => generateSharedEnigma(enigmaGenerationMode.value));
-enigmaGenerationMode.addEventListener("change", updateGenerateButton);
+generateEnigmaButton.addEventListener("click", generateSharedEnigma);
 manualLocationForm.addEventListener("submit", searchManualLocation);
 geminiConsent.addEventListener("change", updateGenerateButton);
 
 function updateGenerateButton() {
-  generateEnigmaButton.disabled = generationInProgress
-    || (enigmaGenerationMode.value === "gemini" && !geminiConsent.checked);
+  generateEnigmaButton.disabled = generationInProgress || !geminiConsent.checked;
 }
 
 async function getGoogleDriveService() {
@@ -385,22 +382,20 @@ async function searchManualLocation(event) {
   }
 }
 
-async function generateSharedEnigma(mode) {
+async function generateSharedEnigma() {
   generationInProgress = true;
   updateGenerateButton();
   generatedEnigmaResult.hidden = true;
-  generatedEnigmaStatus.textContent = mode === "gemini"
-    ? "Connexion à Gemini…"
-    : "Recherche d’un lieu naturel à proximité…";
+  generatedEnigmaStatus.textContent = "Connexion à Gemini…";
   generatedEnigmaStatus.hidden = false;
   delete generatedEnigmaStatus.dataset.error;
 
   try {
-    const requestTimeout = AbortSignal.timeout(55000);
+    const requestTimeout = AbortSignal.timeout(59000);
     const requestSharedEnigma = (location = {}) => fetch("/api/enigma", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...location, mode, calendarDate: selectedEnigmaDate }),
+      body: JSON.stringify({ ...location, mode: "gemini", calendarDate: selectedEnigmaDate }),
       signal: requestTimeout,
     });
     let response = await requestSharedEnigma();
@@ -426,9 +421,7 @@ async function generateSharedEnigma(mode) {
           throw new Error("La position est trop imprécise. Autorise la localisation précise et réessaie à l’extérieur, ou choisis un point sur la carte.");
         }
       }
-      generatedEnigmaStatus.textContent = mode === "gemini"
-        ? "Gemini rédige l’énigme…"
-        : "Recherche d’un lieu naturel puis création de l’énigme…";
+      generatedEnigmaStatus.textContent = "Gemini rédige l’énigme…";
       response = await requestSharedEnigma({ ...location, locationSource });
       result = await response.json();
     }
@@ -460,7 +453,7 @@ async function generateSharedEnigma(mode) {
     generatedEnigmaStatus.textContent = error.code === 1
       ? "La localisation a été refusée. Autorise-la pour chercher un lieu à proximité."
       : error.name === "TimeoutError" || error.name === "AbortError"
-        ? "La génération a dépassé le délai d’attente. Réessaie ou choisis le mode modèle."
+        ? "Gemini met trop de temps à répondre. Réessaie dans quelques instants."
         : error.message;
     generatedEnigmaStatus.dataset.error = "true";
     updateGenerateButton();

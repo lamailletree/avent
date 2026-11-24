@@ -56,7 +56,7 @@
         </div>
         <section class="generated-enigma" id="generated-enigma" aria-label="Créer une énigme de plein air" hidden>
           <p>Cette énigme n’existe pas encore. La première personne à la créer la partagera avec tous les visiteurs de cette date.</p>
-          <p class="location-notice">Tu peux autoriser le GPS ou chercher une adresse en France et choisir un point sur la carte IGN. La recherche d’adresse est envoyée à la Géoplateforme de l’IGN. Avec le GPS, le serveur cherche un lieu de plein air dans OpenStreetMap. Avec un point manuel, le mode modèle cherche un point d’intérêt naturel dans l’IGN, sans appeler OpenStreetMap ; le mode Gemini appelle directement Gemini depuis le point choisi. Les coordonnées ne sont pas conservées dans l’énigme, mais son texte et le nom du lieu seront partagés pour cette date. Aucune position n’est demandée si l’énigme existe déjà.</p>
+          <p class="location-notice">Tu peux autoriser le GPS ou chercher une adresse en France et choisir un point sur la carte IGN. La recherche d’adresse est envoyée à la Géoplateforme de l’IGN. Avec le GPS, le serveur cherche un lieu de plein air dans OpenStreetMap ; avec un point manuel, Gemini reçoit uniquement une catégorie générique. Les coordonnées ne sont pas conservées dans l’énigme, mais son texte et le nom du lieu seront partagés pour cette date. Aucune position n’est demandée si l’énigme existe déjà.</p>
           <fieldset class="manual-location">
             <legend>Choisir une adresse en France ou un point sur la carte</legend>
             <form id="manual-location-form">
@@ -72,18 +72,11 @@
             <p class="manual-location-selection" id="manual-location-selection" role="status" hidden></p>
             <p class="manual-location-attribution">Adresses et fond de carte : © <a href="https://cartes.gouv.fr/" target="_blank" rel="noreferrer">Géoplateforme (IGN)</a>.</p>
           </fieldset>
-          <label class="generated-enigma-mode" for="enigma-generation-mode">
-            Mode de création
-            <select id="enigma-generation-mode">
-              <option value="openstreetmap">Modèle nature (sans IA)</option>
-              <option value="gemini">Gemini</option>
-            </select>
-          </label>
           <label class="ai-consent">
             <input id="gemini-consent" type="checkbox">
             J’accepte d’envoyer à Gemini le lieu trouvé ou le type générique du point choisi. L’offre gratuite peut utiliser ces données pour améliorer les produits Google.
           </label>
-          <button class="admin-button" id="generate-enigma" type="button">Créer l’énigme</button>
+          <button class="admin-button" id="generate-enigma" type="button" disabled>Créer l’énigme avec Gemini</button>
           <p class="generated-enigma-status" id="generated-enigma-status" role="status" hidden></p>
           <div class="generated-enigma-result" id="generated-enigma-result" hidden>
             <p class="generated-enigma-text" id="generated-enigma-text"></p>
