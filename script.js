@@ -259,8 +259,7 @@ function openEnigmaGenerator(number) {
   manualLocationSelection.textContent = "";
   manualLocationSelection.hidden = true;
   selectedManualLocation = null;
-  generateOsmButton.disabled = false;
-  generateGeminiButton.disabled = !geminiConsent.checked;
+  updateGenerateButton();
   modal.hidden = false;
   document.body.classList.add("modal-open");
   initializeManualLocationMap();
