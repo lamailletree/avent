@@ -15,8 +15,8 @@ const modalMessage = document.querySelector("#modal-message");
 const closeButton = document.querySelector("#close-button");
 const imageFrame = document.querySelector(".image-frame");
 const generatedEnigma = document.querySelector("#generated-enigma");
-const generateOsmButton = document.querySelector("#generate-osm-enigma");
-const generateGeminiButton = document.querySelector("#generate-gemini-enigma");
+const enigmaGenerationMode = document.querySelector("#enigma-generation-mode");
+const generateEnigmaButton = document.querySelector("#generate-enigma");
 const geminiConsent = document.querySelector("#gemini-consent");
 const manualLocationForm = document.querySelector("#manual-location-form");
 const manualLocationQuery = document.querySelector("#manual-location-query");
@@ -51,12 +51,15 @@ document.querySelector("#current-month").addEventListener("click", () => {
 });
 renderCalendar();
 
-generateOsmButton.addEventListener("click", () => generateSharedEnigma("openstreetmap"));
-generateGeminiButton.addEventListener("click", () => generateSharedEnigma("gemini"));
+generateEnigmaButton.addEventListener("click", () => generateSharedEnigma(enigmaGenerationMode.value));
+enigmaGenerationMode.addEventListener("change", updateGenerateButton);
 manualLocationForm.addEventListener("submit", searchManualLocation);
-geminiConsent.addEventListener("change", () => {
-  generateGeminiButton.disabled = generationInProgress || !geminiConsent.checked;
-});
+geminiConsent.addEventListener("change", updateGenerateButton);
+
+function updateGenerateButton() {
+  generateEnigmaButton.disabled = generationInProgress
+    || (enigmaGenerationMode.value === "gemini" && !geminiConsent.checked);
+}
 
 async function getGoogleDriveService() {
   if (!googleDriveServicePromise) {
@@ -385,18 +388,21 @@ async function searchManualLocation(event) {
 
 async function generateSharedEnigma(mode) {
   generationInProgress = true;
-  const buttons = [generateOsmButton, generateGeminiButton];
-  for (const button of buttons) button.disabled = true;
+  updateGenerateButton();
   generatedEnigmaResult.hidden = true;
-  generatedEnigmaStatus.textContent = "Recherche d’un lieu naturel à proximité…";
+  generatedEnigmaStatus.textContent = mode === "gemini"
+    ? "Connexion à Gemini…"
+    : "Recherche d’un lieu naturel à proximité…";
   generatedEnigmaStatus.hidden = false;
   delete generatedEnigmaStatus.dataset.error;
 
   try {
+    const requestTimeout = AbortSignal.timeout(55000);
     const requestSharedEnigma = (location = {}) => fetch("/api/enigma", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...location, mode, calendarDate: selectedEnigmaDate }),
+      signal: requestTimeout,
     });
     let response = await requestSharedEnigma();
     let result = await response.json();
@@ -421,7 +427,9 @@ async function generateSharedEnigma(mode) {
           throw new Error("La position est trop imprécise. Autorise la localisation précise et réessaie à l’extérieur, ou choisis un point sur la carte.");
         }
       }
-      generatedEnigmaStatus.textContent = "Recherche d’un lieu naturel puis création de l’énigme…";
+      generatedEnigmaStatus.textContent = mode === "gemini"
+        ? "Gemini rédige l’énigme…"
+        : "Recherche d’un lieu naturel puis création de l’énigme…";
       response = await requestSharedEnigma({ ...location, locationSource });
       result = await response.json();
     }
@@ -452,11 +460,11 @@ async function generateSharedEnigma(mode) {
     generationInProgress = false;
     generatedEnigmaStatus.textContent = error.code === 1
       ? "La localisation a été refusée. Autorise-la pour chercher un lieu à proximité."
-      : error.message;
+      : error.name === "TimeoutError" || error.name === "AbortError"
+        ? "La génération a dépassé le délai d’attente. Réessaie ou choisis le mode modèle."
+        : error.message;
     generatedEnigmaStatus.dataset.error = "true";
-    for (const button of buttons) {
-      button.disabled = button === generateGeminiButton && !geminiConsent.checked;
-    }
+    updateGenerateButton();
   }
 }
 

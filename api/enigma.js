@@ -24,7 +24,7 @@ async function redis(command) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(command),
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(4000),
   });
   if (!response.ok) throw new Error(`Le stockage partagé répond ${response.status}.`);
   const result = await response.json();
@@ -275,11 +275,11 @@ async function makeGeminiPuzzle(place) {
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { temperature: 0.8, maxOutputTokens: 180 },
         }),
-        signal: AbortSignal.timeout(25000),
+        signal: AbortSignal.timeout(20000),
       },
     );
   } catch (error) {
-    if (error?.name === "TimeoutError") {
+    if (error?.name === "TimeoutError" || error?.name === "AbortError") {
       const timeoutError = new Error("Gemini a mis trop de temps à répondre. Réessaie ou choisis un modèle plus rapide.");
       timeoutError.status = 504;
       throw timeoutError;

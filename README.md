@@ -85,6 +85,9 @@ Pour activer ce comportement sur Vercel :
 2. Pour le choix Gemini, crée une clé Google AI Studio et ajoute
    `GEMINI_API_KEY` à Vercel. La clé reste côté serveur. Choisis également un
    identifiant de modèle accessible dans ton compte et configure `GEMINI_MODEL`.
+   Un modèle Gemini Flash est préférable pour une réponse plus rapide. Une
+   génération Gemini est interrompue après 20 secondes et signale clairement
+   l’échec pour permettre de réessayer ou de choisir le modèle sans IA.
 3. Redéploie le site. Les tests locaux nécessitent `vercel dev` pour exécuter
    `/api/enigma`.
 

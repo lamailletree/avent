@@ -72,14 +72,18 @@
             <p class="manual-location-selection" id="manual-location-selection" role="status" hidden></p>
             <p class="manual-location-attribution">Adresses et fond de carte : © <a href="https://cartes.gouv.fr/" target="_blank" rel="noreferrer">Géoplateforme (IGN)</a>.</p>
           </fieldset>
-          <div class="generated-enigma-actions">
-            <button class="admin-button" id="generate-osm-enigma" type="button">Créer une énigme nature</button>
-          </div>
+          <label class="generated-enigma-mode" for="enigma-generation-mode">
+            Mode de création
+            <select id="enigma-generation-mode">
+              <option value="openstreetmap">Modèle nature (sans IA)</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </label>
           <label class="ai-consent">
             <input id="gemini-consent" type="checkbox">
             J’accepte d’envoyer à Gemini le lieu trouvé ou le type générique du point choisi. L’offre gratuite peut utiliser ces données pour améliorer les produits Google.
           </label>
-          <button class="admin-button secondary" id="generate-gemini-enigma" type="button" disabled>Créer avec Gemini</button>
+          <button class="admin-button" id="generate-enigma" type="button">Créer l’énigme</button>
           <p class="generated-enigma-status" id="generated-enigma-status" role="status" hidden></p>
           <div class="generated-enigma-result" id="generated-enigma-result" hidden>
             <p class="generated-enigma-text" id="generated-enigma-text"></p>
